@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+
+# Python
+__pycache__
+*.py[cod]
+*.egg-info
+.pytest_cache
+.venv
+
+# Data & Models (large files)
+data/
+models/
+results/
+
+# CI/CD
+.github
+
+# Docs
+*.md
+
+# OS
+.DS_Store
