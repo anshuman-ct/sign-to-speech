@@ -8,27 +8,26 @@ jobs:
   review:
     runs-on: ubuntu-latest
     permissions:
-      contents: read        # To read the code and skill file
-      pull-requests: write  # To post comments and reviews
-      issues: write        # To handle lifecycle comments
-      id-token: write       # Required for OpenCode security
+      contents: read
+      pull-requests: write
+      issues: write
+      id-token: write
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Full history allows the agent to see previous commits/diffs
+          fetch-depth: 0
 
       - name: Run OpenCode PR Review
-        uses: anomalyco/opencode/github@v1.14.7
+        uses: anomalyco/opencode/github@v1.4.7
         env:
-          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # <-- renamed
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: google/gemini-2.5-flash
           use_github_token: true
           prompt: |
-            Use the skill defined in .opencode/skills/pr-code-review.md
-            to review this pull request:
+            Run the "pr-code-review" skill on this pull request:
             ${{ github.event.pull_request.html_url }} --comment
