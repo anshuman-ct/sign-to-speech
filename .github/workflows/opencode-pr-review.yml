@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0 # Full history allows the agent to see previous commits/diffs
 
       - name: Run OpenCode PR Review
-        uses: anomalyco/opencode/github@v1.14.20
+        uses: anomalyco/opencode/github@v1.14.7
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}  # <-- renamed
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
