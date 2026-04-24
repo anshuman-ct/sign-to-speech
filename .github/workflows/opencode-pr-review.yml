@@ -1,0 +1,31 @@
+name: OpenCode Professional PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read        # To read the code and skill file
+      pull-requests: write  # To post comments and reviews
+      issues: write        # To handle lifecycle comments
+      id-token: write       # Required for OpenCode security
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Full history allows the agent to see previous commits/diffs
+
+      - name: Run OpenCode PR Review
+        uses: anomalyco/opencode/github@latest
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # <--- THIS IS REQUIRED for 'gh' CLI commands
+        with:
+          model: google/gemini-2.5-flash
+          prompt: |
+             Run the "pr-code-review" skill on this pull request: 
+             ${{ github.event.pull_request.html_url }} --comment

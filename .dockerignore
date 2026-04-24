@@ -1,29 +1,81 @@
-# Git
+# Version control
 .git
 .gitignore
+
+# CI/CD
+.github
+.gitlab-ci.yml
+.travis.yml
 
 # IDE
 .vscode
 .idea
 *.swp
+*.swo
 
 # Python
 __pycache__
 *.py[cod]
+*$py.class
 *.egg-info
+.eggs
 .pytest_cache
+.mypy_cache
+.ruff_cache
 .venv
+venv/
+ENV/
 
-# Data & Models (large files)
+# Jupyter
+.ipynb_checkpoints
+*.ipynb
+
+# Data and models (typically large)
+# Keep only the trained model needed for inference.
 data/
-models/
-results/
+models/*
+!models/sign_language_cnn.h5
+models/checkpoints/
+*.pkl
+*.joblib
 
-# CI/CD
-.github
+# Test files
+tests/
+test/
+*_test.py
+*_tests.py
+*.test.js
 
-# Docs
+# Documentation
 *.md
+LICENSE
+docs/
+
+# Environment files
+.env
+.env.local
+.env*.local
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Build outputs
+dist/
+build/
+*.egg
+
+# Reports
+reports/
+*.log
 
 # OS
 .DS_Store
+Thumbs.db
+
+# GitHub Actions workflows (not needed in container)
+.github/workflows/
+
+# Results
+results/
