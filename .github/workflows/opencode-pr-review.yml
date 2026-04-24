@@ -29,5 +29,6 @@ jobs:
           model: google/gemini-2.5-flash
           use_github_token: true
           prompt: |
-            Run the "pr-code-review" skill on this pull request: 
+            Use the skill defined in .opencode/skills/pr-code-review.md
+            to review this pull request:
             ${{ github.event.pull_request.html_url }} --comment
