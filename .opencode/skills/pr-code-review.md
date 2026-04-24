@@ -1,7 +1,6 @@
 ---
 name: pr-code-review
 description: Automated code review for pull requests using multiple specialized agents
-disable-model-invocation: true
 allowed-tools: Bash(gh api:*), Bash(gh pr comment:*), Bash(gh pr diff:*), Bash(gh pr edit:*), Bash(gh pr review:*), Bash(gh pr view:*), Bash(gh pr list:*)
 ---
 
