@@ -22,7 +22,8 @@ jobs:
       - name: Run OpenCode PR Review
         uses: anomalyco/opencode/github@latest
         env:
-          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          AZURE_RESOURCE_NAME: ${{ secrets.AZURE_RESOURCE_NAME }}
+          AZURE_API_KEY: ${{ secrets.AZURE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:

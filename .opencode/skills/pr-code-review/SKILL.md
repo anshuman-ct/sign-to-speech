@@ -79,11 +79,17 @@ Follow these steps precisely:
 
 1. If `--comment` is provided, handle lifecycle comment as follows:
 
-   - First, fetch existing PR comments using GitHub integration tools
+   - Fetch existing PR comments using this exact command:
+      gh pr view {pr_number} --json comments
+
+   - Do NOT use `gh api` to fetch comments
+   - If fetching comments fails or is slow, skip fetching and create a new lifecycle comment instead
    - Search for a comment containing marker: `<!-- pr-review-lifecycle -->`
 
    - If such a comment exists:
      - Update that comment using GitHub API (PATCH issues/comments/{comment_id})
+     - Use this exact command to update:
+         gh api -X PATCH /repos/{owner}/{repo}/issues/comments/{comment_id} -f body="..."
 
    - If no such comment exists:
      - Create a new PR comment using GitHub integration tools with body:
