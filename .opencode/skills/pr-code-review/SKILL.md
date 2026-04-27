@@ -9,25 +9,84 @@ Provide a code review for the given pull request and manage the full review life
 
 - The full repository is already checked out locally. Use local file reads instead of fetching files remotely.
 - The environment provides pull request metadata directly. Use PR number, base SHA, and head SHA. Do NOT rely on parsing PR URLs.
-- Use git diff between base and head SHA to analyze changes.
-- Use available GitHub integration tools for fetching PR metadata, posting comments, and creating reviews. Prefer local repository access for reading code. Do NOT rely on gh CLI unless explicitly required.
 
-**Agent assumptions (applies to all subagents):**
+**Variable Resolution:**
 
-- Assume tools are available, but if a tool lacks required context (e.g., file path), fallback to local repository inspection instead of failing.
+- Replace `<base_sha>` with the provided base SHA value.
+- Replace `<head_sha>` with the provided head SHA value.
+- Never use the literal strings `<base_sha>` or `<head_sha>` in commands.
+
+**Repository Identification:**
+
+- Extract repository owner and name from the environment context.
+- Do not attempt to infer from URLs.
+
+**PR Context Retrieval:**
+
+- Use provided environment metadata for PR number, base SHA, and head SHA.
+- Use git and local repository to infer:
+  - Changed files: `git diff --name-only <base_sha> <head_sha>`
+  - Diff content: `git diff <base_sha> <head_sha>`
+- Use GitHub integration tools only if additional metadata (title, body, existing comments) is required.
+
+**Scope Constraint:**
+
+- Only analyze code present in the git diff between base and head.
+- Do NOT review unchanged files.
+
+**GitHub Interaction Rules:**
+
+- Use GitHub tools only for:
+  - Posting comments
+  - Updating PR description
+  - Fetching PR metadata not available locally
+- Do NOT use GitHub tools for reading code or diffs.
+
+**Review History Retrieval:**
+
+- Use GitHub integration tools to fetch:
+  - Issue comments on the PR
+  - Review comments on the PR
+- Treat comments authored by the current automation identity as prior review feedback.
+
+**CODING.md Resolution:**
+
+- For each changed file:
+  - Check the file's directory
+  - Then walk up parent directories to root
+  - Include the first CODING.md found in each path
+- If no CODING.md exists anywhere, skip policy checks and note this in the final summary.
+
+**Link Construction:**
+
+- Use head SHA for all code references.
+- Construct links using: `https://github.com/{owner}/{repo}/blob/{head_sha}/{file_path}#L{start}-L{end}`
+- Provide at least 1 line of context before and after the flagged lines.
+
+**Comment Discipline:**
+
+- Do not post more than one comment per root cause.
+- Prefer fewer, high-confidence comments over many low-confidence ones.
+
+**Agent assumptions (applies to all review passes):**
+
+- Assume tools are available, but if a tool lacks required context, fallback to local repository inspection instead of failing.
 - Only call a tool if it is required to complete the task. Every tool call should have a clear purpose.
 - If `--comment` is not provided, do not mutate GitHub state. Return findings only.
 - Never include tool/agent/vendor names in PR comments, review comments, lifecycle messages, or PR description updates. Specifically avoid terms like `OpenCode`, `opencode`, and `Claude`.
 
-To do this, follow these steps precisely:
+Follow these steps precisely:
 
-1. If `--comment` is provided, create or update a lifecycle comment first (upsert by marker `<!-- pr-review-lifecycle -->`) with:
+1. If `--comment` is provided, create or update a lifecycle comment (upsert by marker `<!-- pr-review-lifecycle -->`) with:
    - Status: **In progress**
    - Stage: **Started**
    - Message: review has started and context collection is running
    - If a legacy lifecycle comment exists with marker `<!-- opencode-pr-review-lifecycle -->`, update that same comment and replace its body with neutral wording.
 
-2. Fetch PR context including: state, draft, title, body, base ref, head ref, head SHA, files changed, and existing comments/reviews.
+2. Fetch PR context:
+   - Determine changed files using: `git diff --name-only <base_sha> <head_sha>`
+   - Fetch diff content using: `git diff <base_sha> <head_sha>`
+   - Use GitHub integration tools to fetch: state, draft status, title, body, existing comments and reviews.
 
 3. Stop only if one of these is true:
    - PR is closed
@@ -39,35 +98,30 @@ To do this, follow these steps precisely:
    - Stage: **Skipped**
    - Reason: explicit skip condition
 
-4. Build a concise PR summary from title/body/diff (intent + major code areas + risk hotspots). Then append or update this summary in the PR description:
-   - Use a marker block in PR body: `<!-- pr-review-summary -->`
-   - If marker exists, replace that block; if not, append it
-   - Do this early in the lifecycle so humans can see context immediately
-   - If `--comment` is provided, update lifecycle comment stage to **Summary updated**
+4. Build a concise PR summary from title/body/diff (intent + major code areas + risk hotspots). Append or update this summary in the PR description using marker `<!-- pr-review-summary -->`. If marker exists, replace that block; if not, append it. If `--comment` is provided, update lifecycle comment stage to **Summary updated**.
 
-5. Launch a lightweight subagent to return a list of file paths (not contents) for relevant `CODING.md` files:
-   - The root `CODING.md` file, if it exists
-   - Any `CODING.md` files in directories containing files modified by the pull request
+5. Find relevant `CODING.md` files using the CODING.md Resolution rules above. Read them locally.
 
-   If no `CODING.md` exists, continue review as bug-focused and report that policy checks were skipped due to missing `CODING.md`.
-
-6. Fetch existing review feedback left by this reviewer identity (issue comments + review comments). Do NOT early-stop because comments already exist.
+6. Fetch existing review feedback using the Review History Retrieval rules above. Do NOT early-stop because comments already exist.
    - Classify prior findings into: `resolved_by_new_code`, `still_open`, `unclear`
    - Use latest diff + current files to determine whether previously flagged issues were fixed
    - Never duplicate an existing still-open finding with another identical inline comment
 
-7. Launch a subagent to summarize the latest delta since prior review (what changed since the last review cycle).
+7. Summarize the delta since the prior review: what changed since the last review cycle based on the diff.
 
-8. Launch 4 subagents in parallel to independently review changes. Each returns issues with `description`, `reason` (e.g., `CODING.md adherence`, `bug`), and `severity`:
+8. Perform independent review passes — these must be logically independent and can be executed sequentially:
 
-   Agents 1 + 2: `CODING.md` compliance subagents
-   Audit changes for `CODING.md` compliance in parallel. When evaluating `CODING.md` compliance for a file, only consider `CODING.md` files in that file's directory or parent directories.
+   Pass 1: `CODING.md` compliance
+   Audit changes for compliance. When evaluating a file, only consider `CODING.md` files in that file's directory or parent directories (per CODING.md Resolution rules).
 
-   Agent 3: Bug-finding subagent (parallel subagent with agent 4)
-   Scan for obvious bugs. Focus only on the diff itself without reading extra context. Flag only significant bugs; ignore nitpicks and likely false positives. Do not flag issues that you cannot validate without looking at context outside of the git diff.
+   Pass 2: `CODING.md` compliance (second independent pass)
+   Same scope as Pass 1 but conducted independently to catch different violations.
 
-   Agent 4: Bug-finding subagent (parallel subagent with agent 3)
-   Look for problems that exist in the introduced code. This could be security issues, incorrect logic, etc. Only look for issues that fall within the changed code.
+   Pass 3: Bug detection (diff-only)
+   Scan for obvious bugs in the diff only. Flag only significant bugs; ignore nitpicks and likely false positives. Do not flag issues that cannot be validated without context outside the diff.
+
+   Pass 4: Security and logic issues
+   Look for security vulnerabilities and incorrect logic within the changed code only.
 
    **CRITICAL: We only want HIGH SIGNAL issues.** Flag issues where:
    - The code will fail to compile or parse (syntax errors, type errors, missing imports, unresolved references)
@@ -81,19 +135,18 @@ To do this, follow these steps precisely:
 
    If you are not certain an issue is real, do not flag it. False positives erode trust and waste reviewer time.
 
-   In addition to the above, each subagent should be told the PR title and description, and should use local file reads for any code inspection. This will help provide context regarding the author's intent.
+   Each pass should be given the PR title and description for context.
 
    If `--comment` is provided, update lifecycle comment stage to **Analyzing code**.
 
-9. For each issue from bug/policy subagents, launch parallel validation subagents. Keep only high-confidence validated issues and preserve `severity`.
+9. Validate each issue individually. Only keep high-confidence issues. Discard uncertain findings. Preserve `severity` for kept issues.
 
-Severity rubric (required for every validated issue):
+   Severity rubric:
+   - `critical`: exploitable security vulnerability, auth bypass, secret leakage, irreversible data loss/corruption, guaranteed production outage, or guaranteed runtime crash in common paths.
+   - `high`: definite logic/functional bug with significant user/business impact but not critical-level blast radius.
+   - `medium`: real issue with lower impact or narrower scope, still worth fixing.
 
-- `critical`: exploitable security vulnerability, auth bypass, secret leakage, irreversible data loss/corruption, guaranteed production outage, or guaranteed runtime crash in common paths.
-- `high`: definite logic/functional bug with significant user/business impact but not critical-level blast radius.
-- `medium`: real issue with lower impact or narrower scope, still worth fixing.
-
-If severity is uncertain between two levels, choose the lower level.
+   If severity is uncertain between two levels, choose the lower level.
 
 10. Merge results from steps 6 and 9:
     - `resolved_by_new_code` from prior cycle
@@ -126,7 +179,7 @@ If severity is uncertain between two levels, choose the lower level.
     - Stage: best-known stage
     - Message: concise failure reason
 
-Use this list when evaluating issues (these are false positives, do NOT flag):
+Do NOT flag these (false positives):
 
 - Pre-existing issues
 - Something that appears to be a bug but is actually correct
@@ -137,15 +190,9 @@ Use this list when evaluating issues (these are false positives, do NOT flag):
 
 Notes:
 
-- Create a todo list before starting.
 - Existing comments are inputs, not a stop condition. Always evaluate whether new commits fixed prior suggestions.
-- If legacy bot comments contain vendor names, prefer updating those comments to neutral wording when permissions allow.
-- You must cite and link each issue in inline comments.
-- For small, complete fixes, include a committable suggestion block. For larger changes, describe fix direction without suggestion block.
+- If legacy bot comments contain vendor names, update those comments to neutral wording when permissions allow.
+- Cite and link each issue in inline comments using the Link Construction rules above.
+- For small, complete fixes, include a committable suggestion block. For larger changes, describe fix direction without a suggestion block.
 - Never post a committable suggestion unless applying it fully resolves the issue.
 - Only one comment per unique issue.
-- When linking to code in inline comments, use this format exactly: `https://github.com/OWNER/REPO/blob/FULL_SHA/path/to/file.py#L10-L15`
-  - Requires full git SHA
-  - Repo name must match the repo being reviewed
-  - Line range format is L[start]-L[end]
-  - Provide at least 1 line of context before and after the flagged lines
