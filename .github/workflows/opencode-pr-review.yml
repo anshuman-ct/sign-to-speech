@@ -27,7 +27,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: google/gemini-2.5-flash
+          model: azure/gpt-5.4-nano
           use_github_token: true
           prompt: |
             Using the instructions in .opencode/skills/pr-code-review/SKILL.md, 
