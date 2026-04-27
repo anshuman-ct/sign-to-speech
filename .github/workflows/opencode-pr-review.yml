@@ -20,7 +20,7 @@ jobs:
           fetch-depth: 0
 
       - name: Run OpenCode PR Review
-        uses: anomalyco/opencode/github@v1.14.20
+        uses: anomalyco/opencode/github@latest
         env:
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
