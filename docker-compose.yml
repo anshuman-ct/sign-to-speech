@@ -1,0 +1,46 @@
+# docker-compose.yml
+version: '3.8'
+
+services:
+  sign-to-speech:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: sign-to-speech:latest
+    container_name: sign-to-speech
+    # Run in production mode (inference)
+    command: ["python", "-m", "src.inference", "--model", "models/sign_language_cnn.h5", "--camera", "0"]
+    environment:
+      - TF_CPP_MIN_LOG_LEVEL=2
+      - PYTHONUNBUFFERED=1
+    volumes:
+      # Mount models directory if you want to update the model without rebuilding
+      - ./models:/home/appuser/models:ro
+    devices:
+      - /dev/video0:/dev/video0  # Webcam access (Linux)
+    # ports:
+    #   - "8000:8000"  # If inference server is running
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "from src.config import MODEL_PATH; import os; assert os.path.exists(MODEL_PATH)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Development service (optional)
+  dev:
+    build:
+      context: .
+      target: builder
+    image: sign-to-speech:dev
+    container_name: sign-to-speech-dev
+    command: ["python", "-c", "print('Development environment ready')"]
+    environment:
+      - TF_CPP_MIN_LOG_LEVEL=1
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./src:/home/appuser/src
+      - ./models:/home/appuser/models:ro
+    profiles:
+      - dev

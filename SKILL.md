@@ -77,22 +77,10 @@ Provide a code review for the given pull request and manage the full review life
 
 Follow these steps precisely:
 
-1. If `--comment` is provided, handle lifecycle comment as follows:
-
-   - First, fetch existing PR comments using GitHub integration tools
-   - Search for a comment containing marker: `<!-- pr-review-lifecycle -->`
-
-   - If such a comment exists:
-     - Update that comment using GitHub API (PATCH issues/comments/{comment_id})
-
-   - If no such comment exists:
-     - Create a new PR comment using GitHub integration tools with body:
-
-       <!-- pr-review-lifecycle -->
-       **Status**: In progress
-       **Stage**: Started
-       **Message**: review has started and context collection is running
-
+1. If `--comment` is provided, create or update a lifecycle comment (upsert by marker `<!-- pr-review-lifecycle -->`) with:
+   - Status: **In progress**
+   - Stage: **Started**
+   - Message: review has started and context collection is running
    - If a legacy lifecycle comment exists with marker `<!-- opencode-pr-review-lifecycle -->`, update that same comment and replace its body with neutral wording.
 
 2. Fetch PR context:
