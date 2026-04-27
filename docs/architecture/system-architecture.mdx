@@ -1,0 +1,95 @@
+---
+title: "System Architecture"
+description: "High-level design of the Sign Language Recognition system"
+sidebar_position: 1
+tags: [explanation]
+---
+
+## Overview
+
+The Sign Language Recognition system is a real-time computer vision application that translates ASL hand gestures into text. It uses a Convolutional Neural Network (CNN) trained on the Sign Language MNIST dataset.
+
+## System Classification
+
+**Type:** Real-Time System
+
+The primary value is low-latency event processing with continuous video frame analysis requiring sub-second response times.
+
+## Architecture Style
+
+**Single-Process Modular Application**
+
+The system is implemented as a modular Python application where entry points share core modules. This approach was chosen because:
+- No scaling requirements (single-user local deployment)
+- Training and inference are mutually exclusive workflows
+- No distributed communication needed
+
+## Core Components
+
+### 1. Config Service (src/config.py)
+
+Centralized hyperparameter and path management. Imported by all other components.
+
+### 2. Data Loader (src/data_loader.py)
+
+- **Responsibility:** CSV loading, preprocessing, train/validation split
+- **Interfaces:** `load_data()`, `get_generators()`
+
+### 3. Model Service (src/model.py)
+
+- **Responsibility:** CNN architecture definition
+- **Interfaces:** `build_model()`
+- **Architecture:** 4 convolutional blocks → dense layers → softmax
+
+### 4. Training Service (src/train.py)
+
+- **Responsibility:** End-to-end training pipeline
+- **CLI:** `python src/train.py [--epochs N] [--dry-run]`
+
+### 5. Evaluation Service (src/evaluate.py)
+
+- **Responsibility:** Model assessment, metrics, visualization
+- **CLI:** `python src/evaluate.py [--model PATH]`
+
+### 6. Inference Service (src/inference.py)
+
+- **Responsibility:** Real-time hand detection, prediction
+- **CLI:** `python src/inference.py [--model PATH] [--camera N]`
+
+## Data Flow
+
+### Training Pipeline
+
+```
+CSV files → DataLoader → Preprocessing → CNN Model → Training → Model Save
+```
+
+### Inference Pipeline
+
+```
+Webcam → MediaPipe → Hand Detection → ROI Extraction → CNN → Prediction → Display
+```
+
+## Design Decisions
+
+| Decision | Rationale | Trade-off |
+|----------|----------|-----------|
+| MediaPipe for hand detection | Robust landmark detection | ~50ms/frame overhead |
+| 7-frame prediction smoothing | Reduces flicker | 230ms latency |
+| 0.70 confidence threshold | Filters noisy predictions | May require longer gesture hold |
+| Grayscale input | Matches MNIST format | May lose color cues |
+
+## Failure Handling
+
+| Component | Failure Mode | Recovery |
+|-----------|-------------|----------|
+| Dataset missing | FileNotFoundError | Download from Kaggle |
+| Webcam unavailable | VideoCapture fails | Use --video flag |
+| Out of memory | OOM during training | Reduce batch size |
+
+## Future Considerations
+
+- Multi-hand support (currently single hand only)
+- Dynamic alphabet extension (numbers, words)
+- TensorFlow Lite export for mobile
+- REST API wrapper (FastAPI)

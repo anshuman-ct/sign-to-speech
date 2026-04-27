@@ -1,0 +1,98 @@
+---
+title: "Installation"
+description: "Set up the Sign Language Recognition project on your machine"
+sidebar_position: 1
+tags: [tutorial]
+---
+
+## Overview
+
+This guide walks you through setting up the Sign Language Recognition project. The project is a Python application that uses TensorFlow/Keras for sign language classification and MediaPipe for hand tracking.
+
+## Prerequisites
+
+- Python 3.10+
+- Webcam (for real-time inference)
+- ~10GB free disk space (for dataset and models)
+- GPU recommended for training (CPU training is significantly slower)
+
+## Step 1: Clone the Repository
+
+```bash
+git clone <repository-url>
+cd sign-to-speech
+```
+
+## Step 2: Create Virtual Environment
+
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+## Step 3: Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+Required packages include:
+- TensorFlow
+- OpenCV
+- MediaPipe
+- NumPy
+- pandas
+- scikit-learn
+- matplotlib
+
+## Step 4: Dataset Setup
+
+This project uses the Sign Language MNIST dataset from Kaggle.
+
+### Option A: Automatic Download
+
+```bash
+python download_dataset.py
+```
+
+This requires Kaggle API credentials. If you don't have them:
+
+1. Create a Kaggle account at https://www.kaggle.com
+2. Generate an API token from Account Settings
+3. Place `kaggle.json` in `~/.kaggle/` (Linux) or `C:\Users\<user>\.kaggle\` (Windows)
+
+### Option B: Manual Download
+
+1. Download the dataset from https://www.kaggle.com/datasets/datamunge/sign-language-mnist
+2. Extract `sign_mnist_train.csv` and `sign_mnist_test.csv` to `data/raw/`
+
+Your directory structure should look like:
+```
+data/raw/
+├── sign_mnist_train.csv
+└── sign_mnist_test.csv
+```
+
+## Step 5: Verify Installation
+
+Run a dry test to verify the data loads correctly:
+
+```bash
+python src/train.py --dry-run
+```
+
+If you see data loading successful messages, you're ready to train!
+
+## Common Issues
+
+### Webcam Not Available
+
+If you don't have a webcam, you can use a video file for inference:
+
+```bash
+python src/inference.py --video path/to/video.mp4
+```
+
+### Kaggle Authentication Error
+
+Ensure your `kaggle.json` file is in the correct location and has valid credentials.

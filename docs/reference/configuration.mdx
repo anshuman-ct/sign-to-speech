@@ -1,0 +1,84 @@
+---
+title: "Configuration Reference"
+description: "All configuration options for the Sign Language Recognition project"
+sidebar_position: 1
+tags: [reference]
+---
+
+## Overview
+
+This reference documents all configuration options in the project. Configuration is centralized in `src/config.py`.
+
+## Path Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BASE_DIR` | Project root directory | Auto-detected |
+| `DATA_DIR` | Data directory | `data/` |
+| `RAW_DIR` | Raw CSV files | `data/raw` |
+| `MODELS_DIR` | Trained models | `models/` |
+| `CHECKPOINTS_DIR` | Model checkpoints | `models/checkpoints` |
+| `RESULTS_DIR` | Training results | `results/` |
+
+## Image Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `IMG_SIZE` | Target image size (pixels) | 64 |
+| `CHANNELS` | Color channels (1=grayscale, 3=RGB) | 1 |
+| `IMG_SHAPE` | Tuple (IMG_SIZE, IMG_SIZE, CHANNELS) | (64, 64, 1) |
+
+## Model Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `NUM_CLASSES` | Number of output classes | 24 |
+| `LABEL_MAP` | Class index to letter mapping | A-Y (excluding J, Z) |
+| `CLASS_NAMES` | List of class names | ['A', 'B', 'C', ...] |
+
+## Training Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `BATCH_SIZE` | Training batch size | 64 |
+| `EPOCHS` | Maximum training epochs | 50 |
+| `LEARNING_RATE` | Initial learning rate | 0.001 |
+| `VAL_SPLIT` | Validation split ratio | 0.15 |
+| `RANDOM_SEED` | Random seed for reproducibility | 42 |
+
+## Data Augmentation
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `AUGMENT` | Enable/disable augmentation | True |
+| `ROTATION_RANGE` | Random rotation (degrees) | 10 |
+| `WIDTH_SHIFT_RANGE` | Horizontal shift ratio | 0.1 |
+| `HEIGHT_SHIFT_RANGE` | Vertical shift ratio | 0.1 |
+| `ZOOM_RANGE` | Random zoom ratio | 0.1 |
+| `HORIZONTAL_FLIP` | Enable horizontal flip | False |
+
+> ⚠️ Important: `HORIZONTAL_FLIP = False` because flipping changes the meaning of hand gestures (e.g., R vs U).
+
+## Inference Configuration
+
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `CONFIDENCE_THRESHOLD` | Minimum prediction confidence | 0.70 |
+| `WEBCAM_INDEX` | Webcam device index | 0 |
+| `SMOOTHING_WINDOW` | Prediction smoothing buffer size | 7 |
+| `LETTER_DELAY_SEC` | Delay before accepting new letter | 1.2 |
+
+## Supported Classes
+
+The model recognizes 24 ASL letters:
+
+- A, B, C, D, E, F, G, H, I, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y
+
+> Note: Letters J and Z are excluded because they require motion dynamics that cannot be captured in static images.
+
+## Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `CUDA_VISIBLE_DEVICES` | GPU selection (e.g., "0" for first GPU) |
+| `TF_CPP_MIN_LOG_LEVEL` | TensorFlow logging (0=All, 1=Warnings, 2=Errors) |

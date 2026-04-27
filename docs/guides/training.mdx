@@ -1,0 +1,80 @@
+---
+title: "Training the Model"
+description: "How to train the Sign Language CNN model"
+sidebar_position: 1
+tags: [how-to]
+---
+
+## Overview
+
+This guide explains how to train the Sign Language Recognition CNN model using the Sign Language MNIST dataset.
+
+## Quick Start
+
+```bash
+python src/train.py --epochs 50
+```
+
+## Command Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `--epochs` | Number of training epochs | 50 (from config) |
+| `--dry-run` | Validate pipeline without training | false |
+
+## Training Process
+
+The training pipeline performs the following steps:
+
+1. **Data Loading**: Loads training and test data from CSV files
+2. **Preprocessing**: Resizes images from 28×28 to 64×64, normalizes pixel values
+3. **Data Augmentation**: Applies rotation, shift, zoom, and horizontal flip
+4. **Model Building**: Creates a 4-layer CNN with batch normalization
+5. **Training**: Trains with early stopping, checkpointing, and learning rate reduction
+6. **Evaluation**: Evaluates on test set and saves metrics
+
+## Output Files
+
+After training, the following files are generated:
+
+- `models/sign_language_cnn.h5` - Trained model
+- `models/checkpoints/` - Model checkpoints per epoch
+- `results/training_history.json` - Training metrics
+- `results/training_history.png` - Training plot
+
+## Expected Training Time
+
+| Hardware | Approximate Time |
+|----------|-----------------|
+| GPU (RTX 3080+) | ~10-15 minutes |
+| GPU (older) | ~20-30 minutes |
+| CPU (8 cores) | ~2-4 hours |
+
+## Monitoring Training
+
+The training includes several callbacks:
+
+- **Early Stopping**: Stops if validation accuracy doesn't improve for 8 epochs
+- **Model Checkpoint**: Saves best model based on validation accuracy
+- **Reduce LR**: Reduces learning rate when training plateaus
+
+## Configuration
+
+You can modify hyperparameters in `src/config.py`:
+
+```python
+EPOCHS = 50
+BATCH_SIZE = 64
+LEARNING_RATE = 0.001
+VAL_SPLIT = 0.15
+```
+
+## Dry Run Mode
+
+Test the pipeline without actual training:
+
+```bash
+python src/train.py --dry-run
+```
+
+This validates data loading and preprocessing without consuming GPU resources.

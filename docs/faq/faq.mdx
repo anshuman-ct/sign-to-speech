@@ -1,0 +1,83 @@
+---
+title: "FAQ"
+description: "Frequently asked questions about the Sign Language Recognition project"
+sidebar_position: 1
+tags: [how-to]
+---
+
+## General Questions
+
+### Why are only 24 classes supported? Shouldn't ASL have 26 letters?
+
+The Sign Language MNIST dataset contains only 24 classes. Letters J and Z are excluded because they require motion dynamics to distinguish from other letters, which cannot be captured in static images.
+
+### What is the expected accuracy of the model?
+
+The model typically achieves ~98-99% accuracy on the test set when trained for 30-50 epochs with the default configuration.
+
+### Do I need a GPU for training?
+
+A GPU is strongly recommended. Training on CPU can take 10x longer than on GPU.
+
+- GPU (modern): ~10-15 minutes for 50 epochs
+- CPU (8 cores): ~2-4 hours for 50 epochs
+
+## Dataset Questions
+
+### Where does the dataset come from?
+
+The dataset is the Sign Language MNIST dataset from Kaggle: https://www.kaggle.com/datasets/datamunge/sign-language-mnist
+
+### Why is label remapping needed?
+
+The original dataset uses indices 0-8 and 10-24 (skipping 9). The code remaps labels 10-24 to 9-23 to create contiguous class indices for one-hot encoding.
+
+### What do the CSV files contain?
+
+Each row has 785 columns: 784 pixel values (28×28 image) + 1 label column.
+
+## Inference Questions
+
+### Why is there a delay between gestures and text output?
+
+The system uses prediction smoothing (7-frame window) and a letter delay (1.2 seconds) to reduce flickering and ensure稳定的 predictions. This is intentional to improve output quality.
+
+### What if the model predicts with low confidence?
+
+Predictions below the confidence threshold (0.70) are rejected. The bounding box turns orange to indicate this.
+
+### Can I use a video file instead of a webcam?
+
+Yes, use the `--video` flag:
+
+```bash
+python src/inference.py --video path/to/video.mp4
+```
+
+## Troubleshooting
+
+### "Dataset not found" error
+
+You need to download the Sign Language MNIST dataset. See the Installation guide for instructions.
+
+### "Model not found" error
+
+You need to train a model first:
+
+```bash
+python src/train.py --epochs 50
+```
+
+### Webcam not working
+
+1. Try a different camera index: `--camera 1`
+2. Check camera permissions
+3. Use a video file instead: `--video path/to/file.mp4`
+
+### How do I use a pre-trained model?
+
+After training, the model is saved to `models/sign_language_cnn.h5`. Point to it with `--model`:
+
+```bash
+python src/inference.py --model models/sign_language_cnn.h5
+```

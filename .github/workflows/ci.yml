@@ -1,0 +1,141 @@
+# .github/workflows/ci.yml
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+permissions:
+  contents: read
+  security-events: write
+  checks: write
+
+# Cancel in-progress runs for the same branch
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint & Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install linters
+        run: pip install --no-cache-dir ruff mypy
+
+      - name: Lint with ruff
+        run: ruff check .
+
+      - name: Format check
+        run: ruff format --check .
+
+      - name: Type check with mypy
+        run: mypy src --ignore-missing-imports --no-error-summary
+
+  test:
+    name: Test & Coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: pip install --no-cache-dir -r requirements.txt
+
+      - name: Install test dependencies
+        run: pip install --no-cache-dir pytest pytest-cov pytest-xdist
+
+      - name: Create reports directory
+        run: mkdir -p reports
+
+      - name: Run tests
+        run: |
+          pytest \
+            --cov=src \
+            --cov-report=xml:coverage.xml \
+            --cov-report=term-missing \
+            --cov-report=term \
+            --cov-fail-under=50 \
+            --junitxml=reports/junit.xml \
+            -n auto \
+            -v
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: |
+            reports/
+            coverage.xml
+          retention-days: 7
+
+  security-deps:
+    name: Dependency Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install pip-audit
+        run: pip install --no-cache-dir pip-audit
+
+      - name: Run pip-audit
+        run: pip-audit -r requirements.txt --severity high
+
+      - name: Upload audit results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit
+          path: pip-audit*
+          retention-days: 7
+
+  build:
+    name: Build Package
+    needs: [lint, test, security-deps]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: .python-version
+          cache: pip
+
+      - name: Install build tools
+        run: pip install --no-cache-dir build
+
+      - name: Build package
+        run: python -m build --wheel --outdir dist/
+
+      - name: Upload package
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+          retention-days: 7
